@@ -1,0 +1,71 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="node_modules/normalize.css/normalize.css">
+    <link rel="stylesheet" href="assets/css/estilo.css">
+    <link rel="stylesheet" href="assets/css/login.css">
+    <title>Easy Food</title>
+    <script src="https://www.gstatic.com/firebasejs/4.13.0/firebase.js"></script>
+    <script>
+        // Initialize Firebase
+        var config = {
+            apiKey: "AIzaSyBh3xI7zBIcYRsmuSugyBPEjP1sCAKBjxI",
+            authDomain: "easy-food-2018.firebaseapp.com",
+            databaseURL: "https://easy-food-2018.firebaseio.com",
+            projectId: "easy-food-2018",
+            storageBucket: "easy-food-2018.appspot.com",
+            messagingSenderId: "1057321256709"
+        };
+        firebase.initializeApp(config);
+
+        firebase.auth().onAuthStateChanged(function(user) {
+            if (user) {
+                console.log(user);
+            } else {
+                console.log('usuario deslogado!');
+            }
+        });
+
+        function login () {
+
+            let user = document.getElementById('user').value;
+            let password = document.getElementById('password').value;
+
+            firebase.auth().signInWithEmailAndPassword(user, password).catch(function(error) {
+
+                console.log(error);
+
+            });
+        }
+
+    </script>
+  </head>
+  <body>
+    <div class="login-page">
+      <div class="box box-login">
+        <div class="logo">
+          <img src="assets/img/logo.svg">
+        </div>
+        <div class="form-login">
+          <input
+            id="user"
+            class="input"
+            type="text"
+            placeholder="Usuario">
+          <input
+            id="password"
+            class="input"
+            type="password"
+            placeholder="Senha">
+          <div>
+            <a href="#">Esqueceu sua senha?</a>
+          </div>
+          <button
+            onclick="login()"
+            class="button">
+            Entrar
+          </button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
