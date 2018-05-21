@@ -8,33 +8,37 @@
     <script>
         // Initialize Firebase
         var config = {
-            apiKey: "AIzaSyBh3xI7zBIcYRsmuSugyBPEjP1sCAKBjxI",
-            authDomain: "easy-food-2018.firebaseapp.com",
-            databaseURL: "https://easy-food-2018.firebaseio.com",
-            projectId: "easy-food-2018",
-            storageBucket: "easy-food-2018.appspot.com",
-            messagingSenderId: "1057321256709"
+          apiKey: "AIzaSyBh3xI7zBIcYRsmuSugyBPEjP1sCAKBjxI",
+          authDomain: "easy-food-2018.firebaseapp.com",
+          databaseURL: "https://easy-food-2018.firebaseio.com",
+          projectId: "easy-food-2018",
+          storageBucket: "easy-food-2018.appspot.com",
+          messagingSenderId: "1057321256709"
         };
         firebase.initializeApp(config);
 
         firebase.auth().onAuthStateChanged(function(user) {
-            if (user) {
-                console.log(user);
-            } else {
-                console.log('usuario deslogado!');
-            }
+          if (user) {
+            console.log(user);
+          } else {
+            console.log('usuario deslogado!');
+          }
         });
 
         function login () {
 
-            let user = document.getElementById('user').value;
-            let password = document.getElementById('password').value;
+          let user = document.getElementById('user').value;
+          let password = document.getElementById('password').value;
 
-            firebase.auth().signInWithEmailAndPassword(user, password).catch(function(error) {
+          firebase.auth().signInWithEmailAndPassword(user, password).then(function(result) {
 
-                console.log(error);
+              window.location = "app/home.html";
 
-            });
+          }).catch(function(error) {
+
+            console.log(error);
+
+          });
         }
 
     </script>

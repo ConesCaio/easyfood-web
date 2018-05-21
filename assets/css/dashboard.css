@@ -1,0 +1,45 @@
+.logo-dashboard {
+  width: 50px;
+}
+
+.logo-dashboard img {
+  width: 100%;
+  padding: 0px 20px;
+}
+
+.header p {
+  padding: 0px 20px;
+}
+
+.header {
+  width: 100%;
+  border-bottom: 1px solid var(--border-layout);
+  padding: 20px 0;
+  box-shadow: 0 2px 3px 0 rgba(222, 222, 222, 0.9);
+  border-radius: 3px;
+  background: var(--background-inverse-color);
+  display: flex;
+  justify-content: space-between;
+}
+
+.main {
+  width: 100%;
+  margin: 20px 0 0 0;
+  display: flex;
+}
+
+.menu {
+  width: 300px;
+  height: calc(50% - 132px);
+  background: #fff;
+  margin: 0px 20px;
+}
+
+.content {
+  width: 100%;
+  height: calc(100% - 132px);
+  box-shadow: 0 2px 3px 0 rgba(222, 222, 222, 0.9);
+  background: #fff;
+  margin: 0px 20px 0px 0px;
+}
+
