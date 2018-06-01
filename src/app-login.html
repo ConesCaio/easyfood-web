@@ -1,0 +1,111 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/polymerfire/firebase-auth.html">
+<link rel="import" href="../bower_components/iron-input/iron-input.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="app-login">
+  <template>
+    <style include="shared-styles">
+      :host {
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .logo {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 25px 0;
+      }
+
+      .form-login input {
+        margin: 10px 0;
+      }
+
+      .form-login > div {
+        width: 100%;
+        position: relative;
+        margin: 25px 0 30px 0;
+        height: 36px;
+      }
+
+      .form-login a {
+        right: 0;
+        position: absolute;
+        font-weight: bold;
+        margin: 10px 0 0 0;
+      }
+    </style>
+
+  <firebase-auth
+    id="auth"
+    user="{{user}}"
+    provider="google">
+  </firebase-auth>
+
+    <div class="box box-login">
+      <div class="logo">
+        <img src="../assets/img/logo.svg">
+      </div>
+      <div class="form-login">
+        <iron-input>
+          <input
+            id="user"
+            class="input"
+            type="text"
+            placeholder="Usuario"
+            value="{{user::input}}">
+        </iron-input>
+        <iron-input>
+          <input
+            id="password"
+            class="input"
+            type="password"
+            placeholder="Senha"
+            value="{{password::input}}">
+        </iron-input>
+        <div>
+          <a href="#">Esqueceu sua senha?</a>
+        </div>
+        <button
+          on-click="_login"
+          class="button">
+          Entrar
+        </button>
+      </div>
+    </div>
+  </template>
+
+  <script>
+
+    class AppLogin extends Polymer.Element {
+      static get is() { return 'app-login'; }
+
+      static get properties() {
+        return {
+          user: String,
+          password: String
+        };
+      }
+
+      static get observers() {
+      }
+
+      _login() {
+        this.$.auth.signInWithEmailAndPassword(this.user,this.password)
+          .then(response => {
+            this.dispatchEvent(new CustomEvent('login-success', {detail: response}));
+          })
+          .catch( error => {
+            console.log(error);
+          });
+
+          
+      }
+    }
+
+    window.customElements.define(AppLogin.is, AppLogin);
+  </script>
+</dom-module>
