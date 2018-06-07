@@ -21,32 +21,52 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../bower_components/iron-selector/iron-selector.html">
 <link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="my-icons.html">
-<link rel="import" href="../bower_components/polymerfire/firebase-app.html">
+<!-- <link rel="import" href="../bower_components/polymerfire/firebase-app.html"> -->
 
 <!-- <link rel="lazy-import" href="new-order.html">
 <link rel="lazy-import" href="order-production.html">
 <link rel="lazy-import" href="food-menu.html"> -->
 <link rel="lazy-import" href="not-found.html">
-<link rel="import" href="app-login.html">
-<link rel="import" href="restaurant/restaurant-page.html">
+<link rel="lazy-import" href="app-login.html">
+<link rel="lazy-import" href="restaurant/restaurant-page.html">
 
+<script src="https://www.gstatic.com/firebasejs/4.13.0/firebase.js"></script>
 
 <dom-module id="my-app">
   <template>
     <style>
     </style>
+    
+    <app-location
+      route="{{route}}"
+      url-space-regex="^[[rootPath]]">
+    </app-location>
 
-    <firebase-app
-      auth-domain="easy-food-2018.firebaseapp.com"
-      database-url="https://easy-food-2018.firebaseio.com"
-      api-key="AIzaSyBh3xI7zBIcYRsmuSugyBPEjP1sCAKBjxI"
-      storage-bucket="easy-food-2018.appspot.com"
-      messaging-sender-id="1057321256709">
-    </firebase-app>
+    <app-route
+      route="{{route}}"
+      pattern="[[rootPath]]"
+      data="{{routeData}}"
+      tail="{{subroute}}">
+    </app-route>
 
-    <app-login
-      on-login-success="_handleLoginSuccess">
-    </app-login>
+    <iron-pages
+      attr-for-selected="name"
+      role="main"
+      selected="[[page]]"
+      fallback-selection="not-found">
+
+        <app-login
+          name="app-login"
+          route="[[subroute]]">
+        </app-login>
+
+        <restaurant-page
+          name="restaurant-page"
+          route="[[subroute]]">
+        </restaurant-page>
+
+        <not-found name="not-found"></not-found>
+    </iron-pages>    
   </template>
 
   <script>
@@ -69,6 +89,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           // This shouldn't be neccessary, but the Analyzer isn't picking up
           // Polymer.Element#rootPath
           rootPath: String,
+          _userLogged: {
+            type: Boolean,
+            value: false
+          }
         };
       }
 
@@ -78,18 +102,45 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         ];
       }
 
+      // created(){
+      //   // Initialize Firebase
+      //   this.async(function() {
+      //     firebase.initializeApp({
+      //       apiKey: "AIzaSyBh3xI7zBIcYRsmuSugyBPEjP1sCAKBjxI",
+      //       authDomain: "easy-food-2018.firebaseapp.com",
+      //       databaseURL: "https://easy-food-2018.firebaseio.com",
+      //       projectId: "easy-food-2018",
+      //       storageBucket: "easy-food-2018.appspot.com",
+      //       messagingSenderId: "1057321256709"
+      //     })
+      //   }, 1000);
+
+      //   console.log(resp);
+      //   console.log('HI');
+        
+      //   firebase.auth().onAuthStateChanged(function(user) {
+      //     if (user) {
+      //       console.log(user);
+      //     } else {
+      //       console.log('usuario deslogado!');
+      //     }
+      //   });
+      // }
+
       _routePageChanged(page) {
+        console.log(page);
         // If no page was found in the route data, page will be an empty string.
         // Default to 'view1' in that case.
-        this.page = page || 'food-menu';
+        this.page = page || 'app-login';
 
         // Close a non-persistent drawer when the page & route are changed.
-        if (!this.$.drawer.persistent) {
-          this.$.drawer.close();
-        }
+        // if (!this.$.drawer.persistent) {
+        //   this.$.drawer.close();
+        // }
       }
 
       _pageChanged(page) {
+        console.log(page);
         // Load page import on demand. Show 404 page if fails
         const resolvedPageUrl = this.resolveUrl(page + '.html');
         Polymer.importHref(
@@ -101,10 +152,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       _showPage404() {
         this.page = 'not-found';
-      }
-
-      _handleLoginSuccess(e) {
-        console.log(e.detail);
       }
     }
 

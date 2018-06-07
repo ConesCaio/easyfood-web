@@ -1,7 +1,7 @@
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
-<link rel="import" href="../bower_components/polymerfire/firebase-auth.html">
 <link rel="import" href="../bower_components/iron-input/iron-input.html">
 <link rel="import" href="shared-styles.html">
+
 
 <dom-module id="app-login">
   <template>
@@ -20,7 +20,12 @@
         padding: 25px 0;
       }
 
-      .form-login input {
+      .form-login{
+        display: flex;
+        flex-direction: column;
+      }
+
+      .form-login .input{
         margin: 10px 0;
       }
 
@@ -39,33 +44,23 @@
       }
     </style>
 
-  <firebase-auth
-    id="auth"
-    user="{{user}}"
-    provider="google">
-  </firebase-auth>
-
     <div class="box box-login">
       <div class="logo">
         <img src="../assets/img/logo.svg">
       </div>
       <div class="form-login">
-        <iron-input>
-          <input
-            id="user"
-            class="input"
-            type="text"
-            placeholder="Usuario"
-            value="{{user::input}}">
-        </iron-input>
-        <iron-input>
-          <input
-            id="password"
-            class="input"
-            type="password"
-            placeholder="Senha"
-            value="{{password::input}}">
-        </iron-input>
+        <input
+          id="user"
+          class="input"
+          type="text"
+          placeholder="Usuario"
+          value="{{user::input}}">
+        <input
+          id="password"
+          class="input"
+          type="password"
+          placeholder="Senha"
+          value="{{password::input}}">
         <div>
           <a href="#">Esqueceu sua senha?</a>
         </div>
@@ -94,15 +89,14 @@
       }
 
       _login() {
-        this.$.auth.signInWithEmailAndPassword(this.user,this.password)
-          .then(response => {
-            this.dispatchEvent(new CustomEvent('login-success', {detail: response}));
+        console.log(firebase);
+        firebase.auth().signInWithEmailAndPassword(this.user, this.password)
+          .then(function(result) {
+            window.location = "restaurant/restaurant-page.html";
           })
-          .catch( error => {
+          .catch(function(error) {
             console.log(error);
           });
-
-          
       }
     }
 
