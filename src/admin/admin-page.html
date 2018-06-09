@@ -19,7 +19,7 @@
 <link rel="lazy-import" href="owner-profile.html">
 <link rel="lazy-import" href="../not-found.html">
 
-<dom-module id="restaurant-page">
+<dom-module id="admin-page">
   <template>
     <style include="shared-styles">
       :host {
@@ -72,10 +72,10 @@
       <app-drawer id="drawer" slot="drawer" swipe-open="[[narrow]]">
         <app-toolbar>Menu</app-toolbar>
         <iron-selector selected="[[page]]" attr-for-selected="name" class="drawer-list" role="navigation">
-          <a name="food-menu" href="/restaurant/food-menu">Cardápio</a>
-          <a name="new-order" href="/restaurant/new-order">Novo pedido</a>
-          <a name="order-production" href="/restaurant/order-production">Produção</a>
-          <a name="owner-profile" href="/restaurant/owner-profile">Meus Dados</a>
+          <a name="food-menu" href="/admin/food-menu">Cardápio</a>
+          <a name="new-order" href="/admin/new-order">Novo pedido</a>
+          <a name="order-production" href="/admin/order-production">Produção</a>
+          <a name="owner-profile" href="/admin/owner-profile">Meus Dados</a>
           <div on-click="_logout">Sair</div>
         </iron-selector>
       </app-drawer>
@@ -105,8 +105,8 @@
 
   <script>
 
-    class RestaurantPage extends Polymer.Element {
-      static get is() { return 'restaurant-page'; }
+    class AdminPage extends Polymer.Element {
+      static get is() { return 'admin-page'; }
 
       static get properties() {
         return {
@@ -168,6 +168,6 @@
         firebase.auth().signOut();
       }
     }
-    window.customElements.define(RestaurantPage.is, RestaurantPage);
+    window.customElements.define(AdminPage.is, AdminPage);
   </script>
 </dom-module>
