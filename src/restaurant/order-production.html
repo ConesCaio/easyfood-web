@@ -21,16 +21,92 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
     </style>
 
-    <div class="card">
-      <h1>View Two</h1>
-      <p>Ea duis bonorum nec, falli paulo aliquid ei eum.</p>
-      <p>Id nam odio natum malorum, tibique copiosae expetenda mel ea.Detracto suavitate repudiandae no eum. Id adhuc minim soluta nam.Id nam odio natum malorum, tibique copiosae expetenda mel ea.</p>
-    </div>
+    <template is="dom-repeat" items="{{orders}}" as="order">      
+      <div class="card">
+        <h1>Pedido [[order.token]]</h1>
+        <p><b>Cliente: </b> [[order.userName]]</p>
+        <p><b>Status: </b><span hidden$="[[order.delivered]]" style="color: firebrick">Em andamento</span> <span hidden$="[[!order.delivered]]" style="color: green">Entregue</span></p>
+        <hr>
+        [[see(order)]]
+        <template is="dom-repeat" items="{{order.dishes}}" as="dish">      
+            <h1>nome do prato</h1>
+            <p><b>Preço: </b> [[dish.price]]</p>
+            <p><b>Quantidade: </b> [[dish.quantity]]</p>
+            <p><b>Observações: </b> [[dish.observation]]</p>
+            <hr>
+        </template>
+      </div>
+    </template>
+
   </template>
 
   <script>
     class OrderProduction extends Polymer.Element {
       static get is() { return 'order-production'; }
+
+      static get properties() {
+        return {
+          user: Object,
+          page: String,
+          orders: {
+            type: Array,
+            value: []
+          }
+        };
+      }
+
+      static get observers() {
+        return ['_onPageChanged(page)', '_onOrdersChanged(orders)'];
+      }
+
+      see(s) {
+        console.log(s.dishes.length);
+      }
+
+      _onPageChanged(page) {
+        if(page == 'order-production') {
+          const fs = firebase.firestore();
+          const userRef = fs.collection("order");
+
+          var query = userRef.where("restaurantRef", "==", fs.collection("restaurants").doc(this.user.email));
+          query.get().then(function(querySnapshot) {
+            let orders = [];
+            querySnapshot.forEach(function(doc) {
+              const data = doc.data()
+              data['id'] = doc.id;
+              orders.push(data);
+            }.bind(this));
+            this.set('orders', orders);
+          }.bind(this)).catch(function(error) {
+              console.log("Error getting document:", error);
+          });
+        } else {
+          this.set('orders', []);
+        }
+      }
+      _onOrdersChanged(orders) {
+        if(orders.length) {
+          // orders.sort((a,b) => {
+          //   return a.token > b.token;
+          // });
+
+          orders.map(function(order) {
+            order['dishes'] = [];
+            const fs = firebase.firestore();
+            const userRef = fs.collection("order").doc(order.id).collection("orderItem").get()
+              .then(function(querySnapshot) {
+                querySnapshot.forEach(function(doc) {
+                  order['dishes'].push({
+                    observation: doc.data().observation,
+                    price: doc.data().price,
+                    quantity: doc.data().quantity
+                  });
+                }.bind(this));
+              }.bind(this));
+              return order;
+          });
+        }
+      }
     }
 
     window.customElements.define(OrderProduction.is, OrderProduction);
