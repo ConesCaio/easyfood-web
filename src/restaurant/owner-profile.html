@@ -16,46 +16,82 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <template>
     <style include="shared-styles">
       :host {
-        display: block;
-
+        display: flex;
         padding: 10px;
+        /* align-content: center; */
+        justify-content: center;
+      }
+
+      .card {
+        width: 1200px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .card .row {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        margin: 5px;
+      }
+
+      .input-block {
+        display: block;
+        margin-bottom: 20px;
+      }
+
+      /* iron-input {
+        margin: 10px;
+        width: 400px;
+      } */
+
+      .input {
+        display: block;
+        width: 460px;
       }
     </style>
 
     <div class="card">
-      <h1>Nome do restaurante</Nome></h1>
-      <iron-input>
-        <input
-          id="cnpjInput"
-          class="input"
-          type="text"
-          placeholder="CNPJ"
-          value="{{restaurantData.cnpj::input}}">
-      </iron-input>
-      <iron-input>
-        <input
-          id="ownerInput"
-          class="input"
-          type="text"
-          placeholder="Proprietário"
-          value="{{restaurantData.owner::input}}">
-      </iron-input>
-      <iron-input>
-        <input
-          id="phoneInput"
-          class="input"
-          type="text"
-          placeholder="Telefone"
-          value="{{restaurantData.phone::input}}">
-      </iron-input>
-      <iron-input>
-        <input
-          id="emailInput"
-          class="input"
-          type="text"
-          placeholder="E-mail"
-          value="{{restaurantData.email::input}}">
-      </iron-input>
+      <h1>{{restaurantData.name}}</Nome></h1>
+      <div class="input-block">
+        <div class="row">
+          <iron-input>
+            <input
+              id="cnpjInput"
+              class="input"
+              type="text"
+              placeholder="CNPJ"
+              value="{{restaurantData.cnpj::input}}">
+          </iron-input>
+          <iron-input>
+            <input
+              id="ownerInput"
+              class="input"
+              type="text"
+              placeholder="Proprietário"
+              value="{{restaurantData.owner::input}}">
+          </iron-input>
+        </div>
+        <div class="row">
+          <iron-input>
+            <input
+              id="phoneInput"
+              class="input"
+              type="text"
+              placeholder="Telefone"
+              value="{{restaurantData.phone::input}}">
+          </iron-input>
+          <iron-input>
+            <input
+              id="emailInput"
+              class="input"
+              type="text"
+              placeholder="E-mail"
+              value="{{restaurantData.email::input}}"
+              disabled>
+            </iron-input>
+        </div>
+      </div>
       <button
         on-click="_save"
         class="button">
@@ -70,6 +106,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       static get properties() {
         return {
+          user: Object,
+          page: String,
           restaurantData: {
             type: Object,
             value: {}
@@ -78,7 +116,25 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
 
       static get observers() {
-        return [];
+        return ['_onPageChanged(page)'];
+      }
+
+      _onPageChanged(page) {
+        const fs = firebase.firestore();
+
+        const userRef = fs.collection("restaurants").doc(this.user.email);
+        userRef.get().then(function(doc) {
+          this.set('restaurantData', doc.data());
+        }.bind(this)).catch(function(error) {
+            console.log("Error getting document:", error);
+        });
+      }
+
+      _save() {
+        const fs = firebase.firestore();
+
+        const userRef = fs.collection("restaurants").doc(this.user.email);
+        userRef.set(this.restaurantData);
       }
     }
 
