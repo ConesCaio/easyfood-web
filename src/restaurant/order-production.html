@@ -19,21 +19,42 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         padding: 10px;
       }
+
+      p{
+        margin: 10px;
+      }
+
+      h1 {
+        margin: 0;
+      }
+
+      .dish-detail{
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+      }
+
+      .dish-detail p{
+        width: 30%;
+      }
+
     </style>
 
-    <template is="dom-repeat" items="{{orders}}" as="order">      
+    <template id="dishList" is="dom-repeat" items="{{orders}}" as="order">      
       <div class="card">
-        <h1>Pedido [[order.token]]</h1>
-        <p><b>Cliente: </b> [[order.userName]]</p>
-        <p><b>Status: </b><span hidden$="[[order.delivered]]" style="color: firebrick">Em andamento</span> <span hidden$="[[!order.delivered]]" style="color: green">Entregue</span></p>
-        <hr>
-        [[see(order)]]
-        <template is="dom-repeat" items="{{order.dishes}}" as="dish">      
-            <h1>nome do prato</h1>
-            <p><b>Preço: </b> [[dish.price]]</p>
-            <p><b>Quantidade: </b> [[dish.quantity]]</p>
-            <p><b>Observações: </b> [[dish.observation]]</p>
-            <hr>
+        <div style="margin-bottom: 50px;">
+          <h1>Pedido [[order.token]]</h1>
+          <p><b>Cliente: </b> [[order.userName]]</p>
+          <p><b>Status: </b><span hidden$="[[order.delivered]]" style="color: firebrick">Em andamento</span> <span hidden$="[[!order.delivered]]" style="color: green">Entregue</span></p>
+        </div>
+
+        <template is="dom-repeat" items="{{order.dishes}}" as="dish">
+          <h1>[[dish.data.name]] x[[dish.quantity]]</h1>
+          <div class="dish-detail">
+            <p><b>Preço: </b> R$ [[dish.price]]</p>
+            <p hidden$="[[!dish.observation]]"><b>Observações: </b> [[dish.observation]]</p>
+          </div>
+          <hr>
         </template>
       </div>
     </template>
@@ -51,63 +72,95 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           orders: {
             type: Array,
             value: []
+          },
+          _fs: {
+            type: Object,
+            value: () => {
+              return firebase.firestore();
+            }
           }
         };
       }
 
       static get observers() {
-        return ['_onPageChanged(page)', '_onOrdersChanged(orders)'];
-      }
-
-      see(s) {
-        console.log(s.dishes.length);
+        return ['_onPageChanged(page)'];
       }
 
       _onPageChanged(page) {
-        if(page == 'order-production') {
-          const fs = firebase.firestore();
-          const userRef = fs.collection("order");
+        if(page == 'order-production' && this.user) {
 
-          var query = userRef.where("restaurantRef", "==", fs.collection("restaurants").doc(this.user.email));
-          query.get().then(function(querySnapshot) {
-            let orders = [];
-            querySnapshot.forEach(function(doc) {
-              const data = doc.data()
-              data['id'] = doc.id;
-              orders.push(data);
-            }.bind(this));
-            this.set('orders', orders);
-          }.bind(this)).catch(function(error) {
-              console.log("Error getting document:", error);
-          });
+          this._queryOrders()
+            .then( querySnapshot => this._getOrders(querySnapshot))
+            .then( orders => this._getOrdersDishes(orders))
+            .then( results => {
+              let orders = results[0];
+              let ordersDishes = results[1];
+
+              orders.forEach( (order, index) => {
+                order.dishes = ordersDishes[index];
+              }) 
+
+              this.set('orders', orders.sort( (a,b) => { return a.token > b.token;} ));
+            })
         } else {
           this.set('orders', []);
         }
       }
-      _onOrdersChanged(orders) {
-        if(orders.length) {
-          // orders.sort((a,b) => {
-          //   return a.token > b.token;
-          // });
 
-          orders.map(function(order) {
-            order['dishes'] = [];
-            const fs = firebase.firestore();
-            const userRef = fs.collection("order").doc(order.id).collection("orderItem").get()
-              .then(function(querySnapshot) {
-                querySnapshot.forEach(function(doc) {
-                  order['dishes'].push({
-                    observation: doc.data().observation,
-                    price: doc.data().price,
-                    quantity: doc.data().quantity
-                  });
-                }.bind(this));
-              }.bind(this));
-              return order;
-          });
-        }
+      _queryOrders() {
+        return this._fs
+            .collection("order")
+            .where("restaurantRef", "==", this._fs.collection("restaurants").doc(this.user.email))
+            .get();
+      }
+
+      _getOrders(querySnapshot){
+        let orders = [];
+        querySnapshot.forEach( doc => {
+          let order = doc.data();
+          order.id = doc.id;
+          orders.push(order);
+        });
+        return orders;
+      }
+
+      _getDishData(menuItemRef) {
+        return menuItemRef.get()
+          .then( item => {return item.data();} )
+      }
+
+      _getDishes(order) {
+        return this._fs.collection("order").doc(order.id).collection("orderItem").get()
+          .then( querySnapshot => {
+            let dishes = [];
+            querySnapshot.forEach( doc => dishes.push(doc.data()) );
+            return dishes;
+          })
+          .then( dishes => {
+            let dishesDataList = [];
+            dishes.forEach( dish => dishesDataList.push(this._getDishData(dish.menuItemRef)) );
+            return Promise.all([dishes, Promise.all(dishesDataList)]);
+          })
+          .then( results => {
+            let dishes = results[0];
+            let dishesData = results[1];
+
+            dishes.forEach( (dish, index) => {
+              dish.data = dishesData[index];
+            })
+
+            return dishes;
+          })
+      }
+
+      _getOrdersDishes(orders) {
+        let dishListPromises = [];
+        orders.forEach( order => dishListPromises.push(this._getDishes(order)) );
+        return Promise.all([orders, Promise.all(dishListPromises)]);
       }
     }
+
+
 
     window.customElements.define(OrderProduction.is, OrderProduction);
   </script>
