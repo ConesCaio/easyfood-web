@@ -19,23 +19,286 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         padding: 10px;
       }
+
+      .button {
+        width: 100px;
+      }
+
+      h1 {
+        margin: 0;
+      }
+
+      hr {
+        margin-top: 0;
+      }
+
+      .row {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+      }
+
+      p {
+        margin: 5px;
+      }
+
+      .input {
+        margin: 5px;
+        width: 100%;
+      }
     </style>
 
     <div class="card">
-      <h1>Categorias</h1>
-      <p>Modus commodo minimum eum te, vero utinam assueverit per eu.</p>
-      <p>Ea duis bonorum nec, falli paulo aliquid ei eum.Has at minim mucius aliquam, est id tempor laoreet.Pro saepe pertinax ei, ad pri animal labores suscipiantur.</p>
-      <hr>
-      <h1>Item do ca</h1>
-      <p>Modus commodo minimum eum te, vero utinam assueverit per eu.</p>
-      <p>Ea duis bonorum nec, falli paulo aliquid ei eum.Has at minim mucius aliquam, est id tempor laoreet.Pro saepe pertinax ei, ad pri animal labores suscipiantur.</p>
+      <div class="row">
+        <h1>Novo Cardápio</h1>
+        <button
+          on-click="_changeIsEditing"
+          class="button">
+          <span  hidden$="[[_isEditing]]">Criar</span><span  hidden$="[[!_isEditing]]">Cancelar</span>
+        </button>
+      </div>
+      <div hidden$="[[!_isEditing]]">
+        <div style="padding: 15px;">
+          <h1>Categorias</h1>
+          <hr>
+          <div class="row">
+            <input
+            id="categoryInput"
+            class="input"
+            type="text"
+            placeholder="Categoria"
+            value="{{_newCategory.name::input}}">
+            <button
+              on-click="_createNewCategory"
+              class="button">
+              Nova Categoria
+            </button>
+          </div>
+          <template is="dom-repeat" items="{{_categories}}" as="category">
+            <div style="margin-top: 30px">
+              <b>[[category.name]]</b>
+                <div class="row">
+                  <input
+                    id="categoryInput"
+                    class="input"
+                    type="text"
+                    placeholder="Nome"
+                    value="{{_newItem.name::input}}">
+                  <input
+                    id="categoryInput"
+                    class="input"
+                    type="text"
+                    placeholder="Preço"
+                    value="{{_newItem.price::input}}">
+
+                <button
+                on-click="_createNewItem"
+                class="button">
+                Nova Item
+              </button>
+                </div>
+                <input
+                style="width: 90%"
+                  id="categoryInput"
+                  class="input"
+                  type="text"
+                  placeholder="Descrição"
+                  value="{{_newItem.Description::input}}">
+            </div>
+          </template>
+        </div>
+      </div>
+
     </div>
+
+    <template is="dom-repeat" items="{{menus}}" as="menu">
+      <div class="card">
+        <div class="row">
+          <h1>[[menu.name]]</h1>
+          <button
+            on-click="_save"
+            class="button">
+            <span hidden$="[[!menu.status]]">Ativar</span><span hidden$="[[menu.status]]">Desativar</span>
+          </button>
+        </div>
+        <p><b>Status: </b> <span hidden$="[[menu.status]]" style="color: green">Ativo</span><span hidden$="[[!menu.status]]" style="color: firebrick">Inativo</span></p>
+
+        <div style="padding: 15px;">
+          <template is="dom-repeat" items="{{menu.categories}}" as="category">
+            <h1>[[category.name]]</h1>
+            <hr>
+            <template is="dom-repeat" items="{{category.items}}" as="dish">
+              <div style="margin: 30px">
+                <b>[[dish.name]]</b>
+                <p>[[dish.description]]</p>
+                <p>R$ [[dish.price]]</p>
+              </div>
+            </template>
+          </template>
+        </div>
+      </div>
+    </template>
   </template>
 
   <script>
     class FoodMenu extends Polymer.Element {
       static get is() { return 'food-menu'; }
+      
+      static get properties() {
+        return {
+          user: Object,
+          page: String,
+          menus: {
+            type: Array,
+            value: []
+          },
+          _fs: {
+            type: Object,
+            value: () => {
+              return firebase.firestore();
+            }
+          },
+          _isEditing: {
+            type: Boolean,
+            value: false
+          },
+          _availableCategories: {
+            type: Array,
+            value: ['Entrada', 'Prato Principal', 'Sobremesa', 'Bebida']
+          },
+          _categories: {
+            type: Array,
+            value: []
+          },
+          _newCategory: {
+            type: Object,
+            value: {
+              name: ''
+            }
+          },
+          _newItem: {
+            type: Object,
+            value: {
+              name: ''
+            }
+          },
+        };
+      }
 
+      static get observers() {
+        return ['_onPageChanged(page, user)'];
+      }
+
+      _createNewCategory() {
+
+        if(this._newCategory.name) {
+          let categories = this._categories;
+          this.set('_categories');
+          this.set('_categories', categories);
+          this._categories.push({name: this._newCategory.name});
+          this._newCategory = {};
+        }
+      }
+
+      // _createNewCategory() {
+
+      //   if(this._newItem.name) {
+      //     let items = this._categories.items;
+      //     this.set('_categories.items');
+      //     this.set('_categories.items', items);
+      //     this._categories.items.push({name: this._newCategory.name});
+      //     this._newCategory = {};
+      //   }
+      // }
+
+      _changeIsEditing() {
+        if(this._isEditing) {
+          this._newCategory = { name: ''};
+          this._newItem = { name: ''};
+          this._categories = [];
+        }
+        this._isEditing = !this._isEditing;
+      }
+
+      _onPageChanged(page, user) {
+
+        if(page == 'food-menu' && user) {
+          this._getMenus()
+            .then( menus => this._extractMenus(menus))
+            .then( menus => this._getCategories(menus))
+            .then( results => {
+              let menus = results[0];
+              let menusCategories = results[1];
+             
+              menus.forEach( (menu, index) => {
+                menu.categories = menusCategories[index];
+              })
+              this.set('menus', menus.filter(menu => { return menu.categories.length; }));
+            })
+        } else {
+          this.set('menus', []);
+        }
+      }
+
+      _getMenus() {
+        return this._fs
+          .collection("restaurants").doc(this.user.email).collection("menu")
+          .get();
+      }
+
+      _extractMenus(querySnapshot) {
+        let menus = [];
+        querySnapshot.forEach( doc => {
+          let menu = doc.data();
+          menu.id = doc.id;
+          menus.push(menu);
+        });
+        return menus;
+      }
+
+      _getCategories(menus) {
+        let categoriesPromises = [];
+        menus.forEach( menu => categoriesPromises.push(this._getCategoryCollection(menu)));
+        return Promise.all([menus, Promise.all(categoriesPromises)]);
+      }
+
+      _getCategoryCollection(menu) {
+        return this._fs.collection("restaurants").doc(this.user.email).collection("menu").doc(menu.id).collection("category")
+          .get()
+            .then(querySnapshot => {
+              let categories = [];
+              querySnapshot.forEach( doc => {
+                let category = doc.data();
+                category.id = doc.id;
+                categories.push(category);
+              })
+              return categories;
+            })
+            .then(categories => {
+              let itemsPromises = [];
+              categories.forEach( category => itemsPromises.push(this._getItemCollection(menu, category)));
+              return Promise.all([categories, Promise.all(itemsPromises)]);
+            })
+            .then(results => {
+              let categories = results[0];
+              let categoriesItems = results[1];
+             
+              categories.forEach( (category, index) => {
+                category.items = categoriesItems[index];
+              })
+
+              return categories;
+            })
+      }
+      _getItemCollection(menu, category) {
+        return this._fs.collection("restaurants").doc(this.user.email).collection("menu").doc(menu.id).collection("category").doc(category.id).collection("menuItem")
+          .get()
+            .then(querySnapshot => {
+              let items = [];
+              querySnapshot.forEach( doc => items.push(doc.data()) );
+              return items;
+            })
+      }
     }
 
     window.customElements.define(FoodMenu.is, FoodMenu);

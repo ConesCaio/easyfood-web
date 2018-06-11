@@ -126,20 +126,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         
         firebase.auth().onAuthStateChanged(function(user) {
           if (user) {
-            var userRef = this._fs.collection("users").doc(user.email);
-            userRef.get().then(function(doc) {
-              this.set('user', doc.data());
-              switch(doc.data().profile) {
-                case 'client':
-                  this.set('route.path', '/restaurant/food-menu');
-                  break;
-                case 'admin':
-                  this.set('route.path', '/admin');
-                  break;
-              }
-            }.bind(this)).catch(function(error) {
-                console.log("Error getting document:", error);
-            });
+            this._fs.collection("users").doc(user.email)
+              .get()
+                .then( doc => {
+                  this.user = doc.data();
+                  switch(doc.data().profile) {
+                    case 'client':
+                      this.set('route.path', '/restaurant/food-menu');
+                      break;
+                    case 'admin':
+                      this.set('route.path', '/admin');
+                      break;
+                  }
+                })
           } else {
             this.set('route.path', '/login');
           }
