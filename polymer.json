@@ -2,14 +2,15 @@
   "entrypoint": "index.html",
   "shell": "src/my-app.html",
   "fragments": [
-    "src/new-order.html",
-    "src/order-production.html",
-    "src/food-menu.html",
-    "src/not-found.html"
+    "src/restaurant/new-order.html",
+    "src/restaurant/order-production.html",
+    "src/restaurant/food-menu.html",
+    "src/not-found/not-found.html"
   ],
   "sources": [
     "images/**/*",
-    "src/**/*"
+    "src/**/*",
+    "bower.json"
   ],
   "extraDependencies": [
     "bower_components/webcomponentsjs/*.js",
