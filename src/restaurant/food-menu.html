@@ -48,7 +48,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
     </style>
 
-    <div class="card" hidden>
+    <div class="card">
       <div class="row">
         <h1>Novo Cardápio</h1>
         <button
@@ -94,7 +94,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 <button
                 on-click="_createNewItem"
                 class="button">
-                Nova Item
+                Novo Item
               </button>
                 </div>
                 <input
@@ -115,13 +115,27 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <div class="card">
         <div class="row">
           <h1>[[menu.name]]</h1>
-          <button hidden
-            on-click="_save"
-            class="button">
-            <span hidden$="[[!menu.status]]">Ativar</span><span hidden$="[[menu.status]]">Desativar</span>
-          </button>
+          <div>
+            <button
+              hidden$="[[menu.editing]]"
+              on-click="_enableEdit"
+              class="button">
+              <span>Editar</span>
+            </button>
+            <button
+              hidden$="[[!menu.editing]]"
+              on-click="_saveEdit"
+              class="button">
+              <span>Salvar</span>
+            </button>
+            <button
+              on-click="_changeMenuStatus"
+              class="button">
+              <span hidden$="[[menu.status]]">Ativar</span><span hidden$="[[!menu.status]]">Desativar</span>
+            </button>
+          </div>
         </div>
-        <p><b>Status: </b> <span hidden$="[[menu.status]]" style="color: green">Ativo</span><span hidden$="[[!menu.status]]" style="color: firebrick">Inativo</span></p>
+        <p><b>Status: </b> <span hidden$="[[!menu.status]]" style="color: green">Ativo</span><span hidden$="[[menu.status]]" style="color: firebrick">Inativo</span></p>
 
         <div style="padding: 15px;">
           <template is="dom-repeat" items="{{menu.categories}}" as="category">
@@ -182,6 +196,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               name: ''
             }
           },
+          _currentlyEnabledMenu: {
+            type: Object,
+          }
         };
       }
 
@@ -232,6 +249,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
              
               menus.forEach( (menu, index) => {
                 menu.categories = menusCategories[index];
+                menu.editing = false;
+                if (menu.status) this.set('_currentlyEnabledMenu', menu);
               })
               this.set('menus', menus.filter(menu => { return menu.categories.length; }));
             })
@@ -298,6 +317,26 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               querySnapshot.forEach( doc => items.push(doc.data()) );
               return items;
             })
+      }
+
+      _changeMenuStatus(e) {
+        if (!this._currentlyEnabledMenu) {
+          e.model.set('menu.status', true);
+          this.set('_currentlyEnabledMenu', e.model.menu);
+          // update 
+        } else {
+          if (e.model.menu.status) {
+            e.model.set('menu.status', false);
+            this.set('_currentlyEnabledMenu', null);
+            // update
+          } else {
+            this.set('_currentlyEnabledMenu.status', false);
+            this.notifyPath(`menus.${this.menus.indexOf(this._currentlyEnabledMenu)}.status`);
+            e.model.set('menu.status', true);
+            this.set('_currentlyEnabledMenu', e.model.menu);
+            // update
+          }
+        }
       }
     }
 
