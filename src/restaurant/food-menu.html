@@ -19,6 +19,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         padding: 10px;
       }
+      button {
+        cursor: pointer;
+        border-radius: 5px;
+      }
 
       .button {
         width: 100px;
@@ -46,19 +50,41 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         margin: 5px;
         width: 100%;
       }
+
+      .create-menu[disabled] {
+        background: gray;
+
+        cursor: default;
+      }
     </style>
 
     <div class="card">
       <div class="row">
         <h1>Novo Cardápio</h1>
-        <button
-          on-click="_changeIsEditing"
-          class="button">
-          <span  hidden$="[[_isEditing]]">Criar</span><span  hidden$="[[!_isEditing]]">Cancelar</span>
-        </button>
+        <div>
+          <button hidden$="[[!_isEditing]]"
+            on-click="_createNewMenu"
+            class="button create-menu"
+            disabled$="[[!_abletoSave(_newMenu.name, _newMenu.categories.*)]]">
+            <span>Salvar</span>
+          </button>
+          <button
+            on-click="_changeIsEditing"
+            class="button">
+            <span hidden$="[[_isEditing]]">Criar</span><span  hidden$="[[!_isEditing]]">Cancelar</span>
+          </button>
+        </div>
       </div>
       <div hidden$="[[!_isEditing]]">
         <div style="padding: 15px;">
+          <div class="row">
+            <input
+              id="menuNameInput"
+              class="input"
+              type="text"
+              placeholder="Nome"
+              value="{{_newMenu.name::input}}">
+          </div>
           <h1>Categorias</h1>
           <hr>
           <div class="row">
@@ -71,31 +97,37 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             <button
               on-click="_createNewCategory"
               class="button">
-              Nova Categoria
+              Adicionar Categoria
             </button>
           </div>
-          <template is="dom-repeat" items="{{_categories}}" as="category">
-            <div style="margin-top: 30px">
+          <template is="dom-repeat" items="{{_newMenu.categories}}" as="category">
+            <div style="border-radius: 5px; margin: 30px; box-shadow: 0 1px 1px; padding: 20px;">
               <b>[[category.name]]</b>
+              <button
+                  on-click="_removeCategory"
+                  style="text-decoration: underline; background: none; color: var(--highlight-color)"
+                  class="button">
+                  remover
+                </button>
                 <div class="row">
                   <input
                     id="categoryInput"
                     class="input"
                     type="text"
                     placeholder="Nome"
-                    value="{{_newItem.name::input}}">
+                    value="{{category.newItem.name::input}}">
                   <input
                     id="categoryInput"
                     class="input"
                     type="text"
                     placeholder="Preço"
-                    value="{{_newItem.price::input}}">
+                    value="{{category.newItem.price::input}}">
 
                 <button
-                on-click="_createNewItem"
-                class="button">
-                Novo Item
-              </button>
+                  on-click="_createNewItem"
+                  class="button">
+                  Adicionar Item
+                </button>
                 </div>
                 <input
                 style="width: 90%"
@@ -103,7 +135,22 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   class="input"
                   type="text"
                   placeholder="Descrição"
-                  value="{{_newItem.Description::input}}">
+                  value="{{category.newItem.description::input}}">
+                <template is="dom-repeat" items="{{category.items}}" as="dish">
+                  <div style="margin: 30px">
+                    <div class="row">
+                      <b>[[dish.name]]</b>
+                      <button
+                        on-click="_removeItem"
+                        style="text-decoration: underline; background: none; color: var(--highlight-color)"
+                        class="button">
+                        remover
+                      </button> 
+                    </div>
+                    <p>[[dish.description]]</p>
+                    <p>R$ [[dish.price]]</p>
+                  </div>
+                </template>
             </div>
           </template>
         </div>
@@ -135,7 +182,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             </button>
           </div>
         </div>
-        <p><b>Status: </b> <span hidden$="[[!menu.status]]" style="color: green">Ativo</span><span hidden$="[[menu.status]]" style="color: firebrick">Inativo</span></p>
+        <p><b>Status: </b> <span hidden$="[[!menu.status]]" style="background: green; color: ghostwhite; border-radius: 5px; padding: 2px">Ativo</span><span hidden$="[[menu.status]]" style="background: firebrick; color: ghostwhite; border-radius: 5px;  padding: 3px">Inativo</span></p>
 
         <div style="padding: 15px;">
           <template is="dom-repeat" items="{{menu.categories}}" as="category">
@@ -180,20 +227,26 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             type: Array,
             value: ['Entrada', 'Prato Principal', 'Sobremesa', 'Bebida']
           },
-          _categories: {
-            type: Array,
-            value: []
+          _newMenu: {
+            type: Object,
+            value: {
+              name: '',
+              categories: []
+            }
           },
           _newCategory: {
             type: Object,
             value: {
-              name: ''
+              name: '',
+              items: [],
             }
           },
           _newItem: {
             type: Object,
             value: {
-              name: ''
+              name: '',
+              price: '',
+              description: ''
             }
           },
           _currentlyEnabledMenu: {
@@ -207,56 +260,78 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
 
       _createNewCategory() {
-
         if(this._newCategory.name) {
-          let categories = this._categories;
-          this.set('_categories');
-          this.set('_categories', categories);
-          this._categories.push({name: this._newCategory.name});
+          this.push('_newMenu.categories', {
+            name: this._newCategory.name,
+            items: [],
+            newItem: {}
+          });
           this._newCategory = {};
         }
       }
 
-      // _createNewCategory() {
+      _removeCategory(e) {
+        this.splice('_newMenu.categories', this._newMenu.categories.indexOf(e.model.category), 1);
+      }
 
-      //   if(this._newItem.name) {
-      //     let items = this._categories.items;
-      //     this.set('_categories.items');
-      //     this.set('_categories.items', items);
-      //     this._categories.items.push({name: this._newCategory.name});
-      //     this._newCategory = {};
-      //   }
-      // }
+      _createNewItem(e) {
+        console.log(e.model.category);
+        if(e.model.category.newItem.name && e.model.category.newItem.price && e.model.category.newItem.description) {
+          e.model.push('category.items', {
+            name: e.model.category.newItem.name,
+            price: parseFloat(e.model.category.newItem.price),
+            description: e.model.category.newItem.description
+          });
+          e.model.set('category.newItem', {});
+        }
+      }
+
+      _removeItem(e) {
+        const categoryIndex = this._newMenu.categories.findIndex(category => category.name === e.model.parentModel.category.name);
+        this.splice(`_newMenu.categories.${categoryIndex}.items`, e.model.dish.index, 1);
+      }
 
       _changeIsEditing() {
-        if(this._isEditing) {
-          this._newCategory = { name: ''};
-          this._newItem = { name: ''};
-          this._categories = [];
+        this._resetEdit();
+      }
+
+      _resetEdit() {
+        this._newCategory = { name: ''};
+        this._newItem = {
+          name: '',
+          price: '',
+          description: ''
+        }
+        this._newMenu = {
+          name: '',
+          categories: []
         }
         this._isEditing = !this._isEditing;
       }
 
       _onPageChanged(page, user) {
-
         if(page == 'food-menu' && user) {
-          this._getMenus()
-            .then( menus => this._extractMenus(menus))
-            .then( menus => this._getCategories(menus))
-            .then( results => {
-              let menus = results[0];
-              let menusCategories = results[1];
-             
-              menus.forEach( (menu, index) => {
-                menu.categories = menusCategories[index];
-                menu.editing = false;
-                if (menu.status) this.set('_currentlyEnabledMenu', menu);
-              })
-              this.set('menus', menus.filter(menu => { return menu.categories.length; }));
-            })
+          this._fetchData();
         } else {
           this.set('menus', []);
         }
+      }
+
+      _fetchData() {
+        this._getMenus()
+          .then( menus => this._extractMenus(menus))
+          .then( menus => this._getCategories(menus))
+          .then( results => {
+            let menus = results[0];
+            let menusCategories = results[1];
+            
+            menus.forEach( (menu, index) => {
+              menu.categories = menusCategories[index];
+              menu.editing = false;
+              if (menu.status) this.set('_currentlyEnabledMenu', menu);
+            })
+            this.set('menus', menus.filter(menu => { return menu.categories.length; }));
+          })
       }
 
       _getMenus() {
@@ -325,7 +400,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             status: true
           })
           .then(() => {
-            console.log('success');
             e.model.set('menu.status', true);
             this.set('_currentlyEnabledMenu', e.model.menu);
           })
@@ -370,6 +444,49 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             Promise.all([previousActive, newActive]);
           }
         }
+      }
+
+      _abletoSave() {
+        return this._newMenu.name.length && this._newMenu.categories.length && this._newMenu.categories[0].items.length;
+      }
+
+      _createNewMenu() {
+        console.log(this._newMenu);
+        this._fs.collection("restaurants").doc(this.user.email).collection("menu").add({
+          name: this._newMenu.name,
+          status: false
+        })
+        .then(newMenu => {
+          this._newMenu.id = newMenu.id;
+          let categories = this._newMenu.categories.map(category => {
+            return this._fs.collection("restaurants").doc(this.user.email).collection("menu").doc(newMenu.id).collection("category").add({
+              name: category.name
+            });
+          })
+
+          return Promise.all(categories);
+        })
+        .then(results => {
+          let items = this._newMenu.categories
+            .flatMap( (category, index) => category.items
+              .map(item => this._fs
+                .collection("restaurants").doc(this.user.email)
+                .collection("menu").doc(this._newMenu.id)
+                .collection("category").doc(results[index].id)
+                .collection("menuItem").add({
+                  name: item.name,
+                  price: item.price,
+                  description: item.description
+                })
+              )
+            )
+          
+          return Promise.all(items)
+        })
+        .then(results => {
+          this._fetchData();
+          this._resetEdit();
+        });
       }
     }
 
