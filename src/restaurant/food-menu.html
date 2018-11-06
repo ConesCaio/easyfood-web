@@ -176,6 +176,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               <span>Salvar</span>
             </button>
             <button
+              hidden$="[[menu.editing]]"
+              on-click="_deleteMenu"
+              class="button">
+              <span>Apagar</span>
+            </button>
+            <button
               on-click="_changeMenuStatus"
               class="button">
               <span hidden$="[[menu.status]]">Ativar</span><span hidden$="[[!menu.status]]">Desativar</span>
@@ -485,6 +491,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this._fetchData();
           this._resetEdit();
         });
+      }
+
+      _deleteMenu(e) {
+        this._fs.collection("restaurants").doc(this.user.email).collection("menu").doc(e.model.menu.id).delete()
+          .then(() => {
+            this._fetchData();
+          })
       }
     }
 
