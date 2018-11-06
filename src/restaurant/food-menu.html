@@ -321,20 +321,53 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       _changeMenuStatus(e) {
         if (!this._currentlyEnabledMenu) {
-          e.model.set('menu.status', true);
-          this.set('_currentlyEnabledMenu', e.model.menu);
-          // update 
-        } else {
-          if (e.model.menu.status) {
-            e.model.set('menu.status', false);
-            this.set('_currentlyEnabledMenu', null);
-            // update
-          } else {
-            this.set('_currentlyEnabledMenu.status', false);
-            this.notifyPath(`menus.${this.menus.indexOf(this._currentlyEnabledMenu)}.status`);
+          this._fs.collection("restaurants").doc(this.user.email).collection("menu").doc(e.model.menu.id).update({
+            status: true
+          })
+          .then(() => {
+            console.log('success');
             e.model.set('menu.status', true);
             this.set('_currentlyEnabledMenu', e.model.menu);
-            // update
+          })
+          .catch(error => {
+            console.error(error);
+          });
+        
+        } else {
+          if (e.model.menu.status) {
+            this._fs.collection("restaurants").doc(this.user.email).collection("menu").doc(e.model.menu.id).update({
+              status: false
+            })
+            .then(() => {
+              e.model.set('menu.status', false);
+              this.set('_currentlyEnabledMenu', null);
+            })
+            .catch(error => {
+              console.error(error);
+            });
+          } else {
+            let previousActive = this._fs.collection("restaurants").doc(this.user.email).collection("menu").doc(this._currentlyEnabledMenu.id).update({
+              status: false
+            })
+            .then(() => {
+              this.set('_currentlyEnabledMenu.status', false);
+              this.notifyPath(`menus.${this.menus.indexOf(this._currentlyEnabledMenu)}.status`);
+            })
+            .catch(error => {
+              console.error(error);
+            });
+            let newActive = this._fs.collection("restaurants").doc(this.user.email).collection("menu").doc(e.model.menu.id).update({
+              status: true
+            })
+            .then(() => {
+              e.model.set('menu.status', true);
+              this.set('_currentlyEnabledMenu', e.model.menu);
+            })
+            .catch(error => {
+              console.error(error);
+            });
+
+            Promise.all([previousActive, newActive]);
           }
         }
       }
