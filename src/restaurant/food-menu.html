@@ -275,7 +275,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
 
       _createNewItem(e) {
-        console.log(e.model.category);
         if(e.model.category.newItem.name && e.model.category.newItem.price && e.model.category.newItem.description) {
           e.model.push('category.items', {
             name: e.model.category.newItem.name,
@@ -451,7 +450,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
 
       _createNewMenu() {
-        console.log(this._newMenu);
         this._fs.collection("restaurants").doc(this.user.email).collection("menu").add({
           name: this._newMenu.name,
           status: false
