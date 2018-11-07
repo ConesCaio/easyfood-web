@@ -373,7 +373,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             newItem: {}
           });
           this._currentlyEditing.toAdd = this._currentlyEditing.toAdd || [];
-          debugger
+
           this._currentlyEditing.toAdd.push({
             name: this._currentlyEditing.newCategory.name
           });
@@ -386,8 +386,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
 
       _EDITremoveCategory(e) {
-        this._currentlyEditing.toRemove = this._currentlyEditing.toRemove || [];
-        this._currentlyEditing.toRemove.push(e.model.category);
+        if (this._currentlyEditing.toAdd && this._currentlyEditing.toAdd.indexOf(e.model.category)) {
+          this.splice('_currentlyEditing.toAdd', this._currentlyEditing.toAdd.indexOf(e.model.category), 1);
+        } else {
+          this._currentlyEditing.toRemove = this._currentlyEditing.toRemove || [];
+          this._currentlyEditing.toRemove.push(e.model.category);
+        }
         this.splice('_currentlyEditing.categories', this._currentlyEditing.categories.indexOf(e.model.category), 1);
       }
 
@@ -428,8 +432,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       _EDITremoveItem(e) {
         const categoryIndex = this._currentlyEditing.categories.findIndex(category => category.name === e.model.parentModel.category.name);
-        this._currentlyEditing.categories[categoryIndex].toRemove = this._currentlyEditing.categories[categoryIndex].toRemove || [];
-        this._currentlyEditing.categories[categoryIndex].toRemove.push(this._currentlyEditing.categories[categoryIndex].items[e.model.index]);
+        if (this._currentlyEditing.categories[categoryIndex].toAdd && this._currentlyEditing.categories[categoryIndex].toAdd.find(item => item.name === e.model.dish.name)) {
+          this.splice(`_currentlyEditing.categories.${categoryIndex}.toAdd`, this._currentlyEditing.categories[categoryIndex].toAdd.findIndex(item => item.name === e.model.dish.name), 1);
+        } else {
+          this._currentlyEditing.categories[categoryIndex].toRemove = this._currentlyEditing.categories[categoryIndex].toRemove || [];
+          this._currentlyEditing.categories[categoryIndex].toRemove.push(this._currentlyEditing.categories[categoryIndex].items[e.model.index]);
+        }
         this.splice(`_currentlyEditing.categories.${categoryIndex}.items`, e.model.index, 1);
       }
 
@@ -531,7 +539,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           .get()
             .then(querySnapshot => {
               let items = [];
-              querySnapshot.forEach( doc => items.push(doc.data()) );
+              querySnapshot.forEach( doc => {
+                let item = doc.data();
+                item.id = doc.id;
+                items.push(item);
+              });
               return items;
             })
       }
@@ -639,6 +651,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       _enableEdit(e) {
         e.model.set('menu.editing', !e.model.menu.editing);
+
         this.set('_currentlyEditing', JSON.parse(JSON.stringify(e.model.menu)));
         this._currentlyEditing.newCategory = {};
         this._currentlyEditing.categories.forEach(category => { category.newItem = {};})
@@ -649,8 +662,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
 
       _saveEdit(e) {
-        const categoriesToAdd = this._currentlyEditing.toAdd;
-        const categoriesToRemove = this._currentlyEditing.toRemove;
+        const categoriesToAdd = (this._currentlyEditing.toAdd || []);
+        const categoriesToRemove = (this._currentlyEditing.toRemove || []);
 
         let updates = [];
 
@@ -665,41 +678,27 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           updates.push(this._fs.collection("restaurants").doc(this.user.email).collection("menu").doc(this._currentlyEditing.id).collection("category").doc(category.id).delete());
         })
 
-        // add new items
-        // this._fs.collection("restaurants").doc(this.user.email).collection("menu").add({
-        //   name: this._currentlyEditing.name,
-        //   status: false
-        // })
-        // .then(newMenu => {
-        //   this._newMenu.id = newMenu.id;
-        //   let categories = this._currentlyEditing.categories.map(category => {
-        //     return this._fs.collection("restaurants").doc(this.user.email).collection("menu").doc(this.newMenu.id).collection("category").add({
-        //       name: category.name
-        //     });
-        //   })
-
-        //   return Promise.all(categories);
-        // })
-        // .then(results => {
-        //   let items = this._currentlyEditing.categories
-        //     .flatMap( (category, index) => category.items
-        //       .map(item => this._fs
-        //         .collection("restaurants").doc(this.user.email)
-        //         .collection("menu").doc(this._currentlyEditing.id)
-        //         .collection("category").doc(item.id)
-        //         .collection("menuItem").add({
-        //           name: item.name,
-        //           price: item.price,
-        //           description: item.description
-        //         })
-        //       )
-        //     )
+        this._currentlyEditing.categories.forEach(category => {
+          const itemsToAdd = category.toAdd || [];
+          const itemsToRemove = category.toRemove || [];
+          itemsToAdd.forEach(item => {
+            updates.push(this._fs.collection("restaurants").doc(this.user.email).collection("menu").doc(this._currentlyEditing.id).collection("category").doc(category.id).collection("menuItem").add({
+              name: item.name,
+              price: item.price,
+              description: item.description
+            }))
+          })
+          itemsToRemove.forEach(item => {
+            updates.push(this._fs.collection("restaurants").doc(this.user.email).collection("menu").doc(this._currentlyEditing.id).collection("category").doc(category.id).collection("menuItem").doc(item.id).delete());
+          })
+        })
           
           Promise.all(updates)
           .then(results => {
             this._fetchData();
             this.set('_currentlyEditing');
             this.set('_isEditing', false);
+            e.model.set('menu.editing', false);
           });
       }
     }
