@@ -9,6 +9,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 <link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../../bower_components/neon-animation/web-animations.html">
 <link rel="import" href="../shared-styles.html">
 
 <dom-module id="order-production">
@@ -40,7 +42,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     </style>
 
-    <template id="dishList" is="dom-repeat" items="{{orders}}" as="order">      
+    <div style="display: flex; flex-direction: row; margin-left:23px;">
+      <span>Exibir </span>
+      <select value="{{filter::change}}" style="font-size: 16px; margin-left: 5px;">
+        <option value="0">Todos</option>
+        <option value="1">Em Andamento</option>
+        <option value="2">Recebido</option>
+      </select>
+    </div> 
+
+    <template id="dishList" is="dom-repeat" items="{{filteredOrders}}" as="order">      
       <div class="card">
         <div style="margin-bottom: 50px;">
           <h1>Pedido [[order.token]]</h1>
@@ -78,6 +89,26 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             value: () => {
               return firebase.firestore();
             }
+          },
+          filteredOrders: {
+            type: Array,
+            value: []
+          },
+          filter: {
+            type: Number,
+            observer(newValue, oldValue){
+              switch(newValue) {
+                case '0':
+                  this.set('filteredOrders', this.orders);
+                  break
+                case '1':
+                  this.set('filteredOrders', this.orders.filter(order => order.delivered === false));
+                  break
+                case '2':
+                  this.set('filteredOrders', this.orders.filter(order => order.delivered === true));
+                  break
+              }
+            }
           }
         };
       }
@@ -101,6 +132,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               }) 
 
               this.set('orders', orders.sort( (a,b) => { return parseInt(b.token) - parseInt(a.token);} ));
+              this.set('filteredOrders', this.orders);
             })
         } else {
           this.set('orders', []);
