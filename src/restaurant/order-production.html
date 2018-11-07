@@ -100,7 +100,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 order.dishes = ordersDishes[index];
               }) 
 
-              this.set('orders', orders.sort( (a,b) => { return a.token > b.token;} ));
+              this.set('orders', orders.sort( (a,b) => { return parseInt(b.token) - parseInt(a.token);} ));
             })
         } else {
           this.set('orders', []);
