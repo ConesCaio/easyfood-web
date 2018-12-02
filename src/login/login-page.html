@@ -1,5 +1,6 @@
 <link rel="import" href="../../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../../bower_components/iron-input/iron-input.html">
+<link rel="import" href="../../bower_components/paper-spinner/paper-spinner.html">
 <link rel="import" href="../shared-styles.html">
 
 
@@ -42,22 +43,30 @@
         font-weight: bold;
         margin: 10px 0 0 0;
       }
+      .spinner {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+      }
     </style>
     <div class="box box-login">
       <div class="logo">
         <img src="../assets/img/logo.svg">
       </div>
+
       <div class="form-login">
         <input
           id="user"
           class="input"
           type="text"
+          disabled="[[loading]]"
           placeholder="Usuario"
           value="{{user::input}}">
         <input
           id="password"
           class="input"
           type="password"
+          disabled="[[loading]]"
           placeholder="Senha"
           value="{{password::input}}">
         <div>
@@ -65,9 +74,13 @@
         </div>
         <button
           on-click="_login"
-          class="button">
+          class="button"
+          hidden="[[loading]]">
           Entrar
         </button>
+        <div class="spinner" hidden="[[!loading]]">
+          <paper-spinner active$="[[loading]]"></paper-spinner>
+        </div>
       </div>
     </div>
   </template>
@@ -80,7 +93,12 @@
       static get properties() {
         return {
           user: String,
-          password: String
+          password: String,
+          loading: {
+            type: Boolean,
+            value: false,
+            notify: true
+          }
         };
       }
 
@@ -88,10 +106,8 @@
       }
 
       _login() {
+        this.set('loading', true);
         firebase.auth().signInWithEmailAndPassword(this.user, this.password)
-          // .then(function(result) {
-          //   window.location.href = "restaurant/restaurant-page";
-          // })
           .catch(function(error) {
             console.log(error);
           });

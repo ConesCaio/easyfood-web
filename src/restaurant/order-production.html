@@ -35,20 +35,88 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         flex-direction: column;
         justify-content: flex-start;
       }
+      button {
+        cursor: pointer;
+      }
+      .order-stats-mini {
+        padding: 10px 20px;
+        margin: 0 10px;
+        font-size: 14px;
+        border-radius: 5px;
+      }
 
       .dish-detail p{
         width: 30%;
       }
+      .order-stats {
+        padding: 20px 40px;
+        margin: 0 10px;
+        font-size: 18px;
+        border-radius: 10px;
+      }
+      .preparation-btn {
+        background: goldenrod;
+      }
+      .ready-btn {
+        background: forestgreen;
+      }
+      .delivered-btn {
+        background: tomato;
+      }
+      .preparation-btn:not([selected]) {
+        background: grey;
+      }
+      .ready-btn:not([selected])  {
+        background: grey;
+      }
+      .delivered-btn:not([selected])  {
+        background: grey;
+      }
+      .all-btn:not([selected])  {
+        background: grey;
+      }
+      .preparation {
+        color: goldenrod;
+      }
+      .ready {
+        color: forestgreen;
+      }
+      .delivered {
+        color: tomato;
+      }
 
     </style>
 
-    <div style="display: flex; flex-direction: row; margin-left:23px;">
-      <span>Exibir </span>
-      <select value="{{filter::change}}" style="font-size: 16px; margin-left: 5px;">
-        <option value="0">Todos</option>
-        <option value="1">Em Andamento</option>
-        <option value="2">Recebido</option>
-      </select>
+    <div style="display: flex; flex-direction: row; margin-left:23px; align-items: center">
+      <span style="font-size: 18px; font-weight: bold;">Exibir: </span>
+      <button 
+        on-click="_changeFilter"
+        data-id="0"
+        class="button order-stats all-btn"
+        selected$="[[_isSelected(filter, 0)]]">
+        <span>Todos</span>
+      </button>
+      <button 
+        on-click="_changeFilter"
+        data-id="1"
+        class="button order-stats preparation-btn"
+        selected$="[[_isSelected(filter, 1)]]">
+        <span>Preparando</span>
+      </button>
+      <button
+        on-click="_changeFilter"
+        data-id="2"
+        class="button order-stats ready-btn"
+        selected$="[[_isSelected(filter, 2)]]">
+        <span>Retirar no Caixa</span>
+      </button>
+      <button
+        on-click="_changeFilter"
+        data-id="3"
+        class="button order-stats delivered-btn"
+        selected$="[[_isSelected(filter, 3)]]">
+        <span>Retirado</span>
+      </button>
     </div> 
 
     <template id="dishList" is="dom-repeat" items="{{filteredOrders}}" as="order">      
@@ -56,7 +124,30 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         <div style="margin-bottom: 50px;">
           <h1>Pedido [[order.token]]</h1>
           <p><b>Cliente: </b> [[order.userName]]</p>
-          <p><b>Status: </b><span hidden$="[[order.delivered]]" style="color: firebrick">Em andamento</span> <span hidden$="[[!order.delivered]]" style="color: green">Entregue</span></p>
+          <p style="display: flex; flex-direction: row; align-items: center; width: 50%;">
+            <b>Status: </b>
+            <button 
+              on-click="_changeStatus"
+              data-id="1"
+              class="button order-stats-mini preparation-btn"
+              selected$="[[_currentStatus(order, 1)]]">
+              <span>Preparando</span>
+            </button>
+            <button
+              on-click="_changeStatus"
+              data-id="2"
+              class="button order-stats-mini ready-btn"
+              selected$="[[_currentStatus(order, 2)]]">
+              <span>Retirar no Caixa</span>
+            </button>
+            <button
+              on-click="_changeStatus"
+              data-id="3"
+              class="button order-stats-mini delivered-btn"
+              selected$="[[_currentStatus(order, 3)]]">
+              <span>Retirado</span>
+            </button>
+          </p>
         </div>
 
         <template is="dom-repeat" items="{{order.dishes}}" as="dish">
@@ -96,16 +187,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           },
           filter: {
             type: Number,
+            value: 0,
             observer(newValue, oldValue){
               switch(newValue) {
-                case '0':
+                case 0:
                   this.set('filteredOrders', this.orders);
                   break
-                case '1':
-                  this.set('filteredOrders', this.orders.filter(order => order.delivered === false));
+                case 1:
+                  this.set('filteredOrders', this.orders.filter(order => !order.delivered && (!order.status || order.status === 'Preparando')));
                   break
-                case '2':
-                  this.set('filteredOrders', this.orders.filter(order => order.delivered === true));
+                case 2:
+                  this.set('filteredOrders', this.orders.filter(order => !order.delivered && order.status && order.status === 'Retirar no Caixa'));
+                  break
+                case 3:
+                  this.set('filteredOrders', this.orders.filter(order => order.delivered));
                   break
               }
             }
@@ -115,6 +210,60 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       static get observers() {
         return ['_onPageChanged(page)'];
+      }
+
+      _changeStatus(e) {
+        const updatedStatus = e.currentTarget.dataset.id === '1' ? {delivered: false, status: 'Preparando'} :
+          e.currentTarget.dataset.id === '2' ? {delivered: false, status: 'Retirar no Caixa'} :
+          e.currentTarget.dataset.id === '3' ? {delivered: true, status: 'Retirado'} :
+          {};
+
+        this._fs.collection("order").doc(e.model.order.id).update(updatedStatus)
+          .then(() => {
+            this._queryOrders()
+            .then( querySnapshot => this._getOrders(querySnapshot))
+            .then( orders => this._getOrdersDishes(orders))
+            .then( results => {
+              let orders = results[0];
+              let ordersDishes = results[1];
+
+              orders.forEach( (order, index) => {
+                order.dishes = ordersDishes[index];
+              }) 
+
+              this.set('orders', orders.sort( (a,b) => { return parseInt(b.token) - parseInt(a.token);} ));
+              this.set('filteredOrders', this.orders);
+            })
+          });
+      }
+
+      _currentStatus(order, id) {
+        switch(id) {
+          case 1: return !order.delivered && (!order.status || order.status === 'Preparando');
+          case 2: return !order.delivered && order.status && order.status === 'Retirar no Caixa';
+          case 3: return order.delivered;
+        }
+      }
+
+      _isSelected(filter, id) {
+        return filter === id; 
+      }
+
+      _changeFilter(e) {
+        this.set('filter', parseInt(e.currentTarget.dataset.id));
+      }
+
+      _getLabelColor(order) {
+        return (order.delivered) ? 'delivered' :
+          (!order.status) ? 'preparation' :
+          order.status === 'Retirado' ? 'ready' :
+          '';
+      }
+
+      _getStatusLabel(order) {
+        return (order.delivered) ? 'Retirado' :
+          (!order.status) ? 'Preparando' :
+          order.status;
       }
 
       _onPageChanged(page) {

@@ -59,7 +59,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         <login-page
           name="login"
-          route="[[subroute]]">
+          route="[[subroute]]"
+          loading={{loading}}>
         </login-page>
 
         <admin-page
@@ -71,7 +72,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         <restaurant-page
           user=[[user]]
           name="restaurant"
-          route="[[subroute]]">
+          route="[[subroute]]"
+          loading={{loading}}>
         </restaurant-page>
 
         <not-found name="not-found"></not-found>
@@ -99,7 +101,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             type: Boolean,
             value: false
           },
-          _fs: Object
+          _fs: Object,
+          loading: {
+            type: Boolean,
+            value: false
+          }
         };
       }
 
@@ -125,6 +131,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this._fs = firebase.firestore();
         
         firebase.auth().onAuthStateChanged(function(user) {
+          this.set('loading', false);
           if (user) {
             this._fs.collection("users").doc(user.email)
               .get()
