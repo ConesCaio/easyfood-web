@@ -17,6 +17,7 @@
 <link rel="lazy-import" href="order-production.html">
 <link rel="lazy-import" href="food-menu.html">
 <link rel="lazy-import" href="owner-profile.html">
+<link rel="lazy-import" href="restaurant-statistics.html">
 <link rel="lazy-import" href="../not-found/not-found.html">
 
 <dom-module id="restaurant-page">
@@ -75,6 +76,7 @@
           <a name="food-menu" href="/restaurant/food-menu">Cardápio</a>
           <!-- <a name="new-order" href="/restaurant/new-order">Novo pedido</a> -->
           <a name="order-production" href="/restaurant/order-production">Produção</a>
+          <a name="restaurant-statistics" href="/restaurant/restaurant-statistics">Estatísticas</a>
           <a name="owner-profile" href="/restaurant/owner-profile">Meus Dados</a>
           <div style="cursor: pointer" on-click="_logout">Sair</div>
         </iron-selector>
@@ -96,6 +98,7 @@
           <!-- <new-order name="new-order"></new-order> -->
           <order-production name="order-production" page="[[page]]" user="[[user]]"></order-production>
           <food-menu name="food-menu" page="[[page]]" user="[[user]]"></food-menu>
+          <restaurant-statistics name="restaurant-statistics" page="[[page]]" user="[[user]]"></restaurant-statistics>
           <owner-profile name="owner-profile" page="[[page]]" user="[[user]]"></owner-profile>
           <not-found name="not-found"></not-found>
         </iron-pages>

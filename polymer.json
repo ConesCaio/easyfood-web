@@ -3,6 +3,7 @@
   "shell": "src/my-app.html",
   "fragments": [
     "src/restaurant/new-order.html",
+    "src/restaurant/restaurant-statistics.html",
     "src/restaurant/order-production.html",
     "src/restaurant/food-menu.html",
     "src/not-found/not-found.html"

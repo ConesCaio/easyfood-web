@@ -1,0 +1,219 @@
+<!--
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../shared-styles.html">
+<link rel="import" href="../../bower_components/iron-input/iron-input.html">
+<script src="../../bower_components/lodash/lodash.js"></script>
+<link rel="import" href="../../bower_components/google-chart/google-chart.html">
+
+<dom-module id="restaurant-statistics">
+  <template>
+    <style include="shared-styles">
+      :host {
+        display: flex;
+        padding: 10px;
+        /* align-content: center; */
+        justify-content: center;
+      }
+
+      .card {
+        width: 1200px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .card .row {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-evenly;
+        margin: 5px;
+      }
+
+      .input-block {
+        display: block;
+        margin-bottom: 20px;
+      }
+
+      .input {
+        display: block;
+        width: 460px;
+      }
+
+      google-chart {
+        height: 300px;
+        width: 80%;
+      }
+    </style>
+
+    <div class="card">
+      <h1>Estatísticas</h1>
+
+      <google-chart
+        type='column'
+        options='{"title": "Total de Pedidos por Dia"}'
+        cols='[{"label":"Dia", "type":"string"}, {"label":"Número de Pedidos", "type":"number"}]'
+        rows='[[ordersByDate]]'>
+      </google-chart>
+
+      <google-chart
+        type='column'
+        options='{"title": "Faturamento Mensal(R$)"}'
+        cols='[{"label":"Mês", "type":"string"}, {"label":"Faturamento(R$)", "type":"number"}]'
+        rows='[[earningsByMonth]]'>
+      </google-chart>
+
+      <google-chart
+        type='pie'
+        options='{"title": "Total de Pedidos por Prato"}'
+        cols='[{"label":"Prato", "type":"string"}, {"label":"Número de Pedidos", "type":"number"}]'
+        rows='[[ordersByDish]]'>
+      </google-chart>
+      
+    </div>
+  </template>
+
+  <script>
+    const MONTHS = ['JAN', 'FEV', 'MAR', 'ABRL', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+
+    class RestaurantStatistics extends Polymer.Element {
+      static get is() { return 'restaurant-statistics'; }
+
+      static get properties() {
+        return {
+          user: Object,
+          page: String,
+          orders: Array,
+          restaurantData: {
+            type: Object,
+            value: {}
+          },
+          _fs: {
+            type: Object,
+            value: () => {
+              return firebase.firestore();
+            }
+          }
+        };
+      }
+
+      static get observers() {
+        return ['_onPageChanged(page)', '_onOrdesChanged(orders)'];
+      }
+
+      _onOrdesChanged(orders){
+        this.set('ordersByDate', _.chain(orders)
+          .groupBy(order => {
+            let date = new Date(order.createdAt);
+            return `${date.getDate()}/${date.getMonth()}/${date.getFullYear()}`;
+          })
+          .map( (orders, label) => ([label, orders.length]))
+          .reverse()
+          .value());
+
+        this.set(`earningsByMonth`, _.chain(orders)
+          .groupBy(order => {
+            let date = new Date(order.createdAt);
+            return date.getMonth().toLocaleString('pt-br', {
+              month: "long"
+            });
+          })
+          .map( (orders, label) => ([MONTHS[parseInt(label)], orders.flatMap((order) => order.dishes).reduce((total, dish) => {
+            return total + dish.price;
+          }, 0.0)]))
+          .reverse()
+          .value());
+
+        this.set(`ordersByDish`, _.chain(orders.flatMap((order) => order.dishes))
+          .groupBy(dish => dish.data.name)
+          .map( (orders, label) => ([label, orders.length]))
+          .value());
+      }
+
+      _onPageChanged(page) {
+        if(page == 'restaurant-statistics' && this.user) {
+          this._queryOrders()
+            .then( querySnapshot => this._getOrders(querySnapshot))
+            .then( orders => this._getOrdersDishes(orders))
+            .then( results => {
+              let orders = results[0];
+              let ordersDishes = results[1];
+
+              orders.forEach( (order, index) => {
+                order.dishes = ordersDishes[index];
+              }) 
+
+              this.set('orders', orders.sort( (a,b) => { return parseInt(b.token) - parseInt(a.token);} ));
+            })
+        } else {
+          this.set('orders', []);
+        }
+      }
+
+      _queryOrders() {
+        return this._fs
+            .collection("order")
+            .where("restaurantRef", "==", this._fs.collection("restaurants").doc(this.user.email))
+            .get();
+      }
+
+
+
+      _getDishData(menuItemRef) {
+        return menuItemRef.get()
+          .then( item => {return item.data();} )
+      }
+
+      _getDishes(order) {
+        return this._fs.collection("order").doc(order.id).collection("orderItem").get()
+          .then( querySnapshot => {
+            let dishes = [];
+            querySnapshot.forEach( doc => dishes.push(doc.data()) );
+            return dishes;
+          })
+          .then( dishes => {
+            let dishesDataList = [];
+            dishes.forEach( dish => dishesDataList.push(this._getDishData(dish.menuItemRef)) );
+            return Promise.all([dishes, Promise.all(dishesDataList)]);
+          })
+          .then( results => {
+            let dishes = results[0];
+            let dishesData = results[1];
+
+            dishes.forEach( (dish, index) => {
+              dish.data = dishesData[index];
+            })
+
+            return dishes;
+          })
+      }
+
+      _getOrders(querySnapshot){
+        let orders = [];
+        querySnapshot.forEach( doc => {
+          let order = doc.data();
+          order.id = doc.id;
+          orders.push(order);
+        });
+        return orders;
+      }
+
+      _getOrdersDishes(orders) {
+        let dishListPromises = [];
+        orders.forEach( order => dishListPromises.push(this._getDishes(order)) );
+        return Promise.all([orders, Promise.all(dishListPromises)]);
+      }
+    }
+
+    window.customElements.define(RestaurantStatistics.is, RestaurantStatistics);
+  </script>
+</dom-module>
