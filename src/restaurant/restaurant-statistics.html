@@ -118,8 +118,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       _todaysOrders() {
         return (this.orders || []).filter(order => {    
           let date = new Date(order.createdAt);
-          console.log(`${date.getDate()}/${date.getMonth()}/${date.getFullYear()}`);
-          return this._today() === `${date.getDate()}/${date.getMonth()}/${date.getFullYear()}`;
+          return this._today() === `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()}`;
         }).length;
       }
 
@@ -127,7 +126,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         return (this.orders || [])
           .filter(order => {        
             let date = new Date(order.createdAt);  
-            return this._today() === `${date.getDate()}/${date.getMonth()}/${date.getFullYear()}`
+            return this._today() === `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()}`
           })
           .flatMap((order) => order.dishes)
           .reduce((total, dish) => {
@@ -137,14 +136,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       _today() {
         var date = new Date();
-        return `${date.getDate()}/${date.getMonth()}/${date.getFullYear()}`;
+        return `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()}`;
       }
 
       _onOrdesChanged(orders){
         this.set('ordersByDate', _.chain(orders)
           .groupBy(order => {
             let date = new Date(order.createdAt);
-            return `${date.getDate()}/${date.getMonth()}/${date.getFullYear()}`;
+            return `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()}`;
           })
           .map( (orders, label) => ([label, orders.length]))
           .reverse()
@@ -153,14 +152,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this.set(`earningsByMonth`, _.chain(orders)
           .groupBy(order => {
             let date = new Date(order.createdAt);
-            return date.getMonth().toLocaleString('pt-br', {
-              month: "long"
-            });
+            return date.getMonth();
           })
           .map( (orders, label) => ([MONTHS[parseInt(label)], orders.flatMap((order) => order.dishes).reduce((total, dish) => {
             return total + dish.price;
           }, 0.0)]))
-          .reverse()
           .value());
 
         this.set(`ordersByDish`, _.chain(orders.flatMap((order) => order.dishes))
