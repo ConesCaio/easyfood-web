@@ -270,16 +270,64 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 <template is="dom-repeat" items="{{category.items}}" as="dish">
                   <div style="margin: 30px">
                     <div class="row">
-                      <b>[[dish.name]]</b>
-                      <button
-                        on-click="_EDITremoveItem"
-                        style="text-decoration: underline; background: none; color: var(--highlight-color)"
-                        class="button">
-                        remover
-                      </button> 
+                      <input
+                        id="categoryInput"
+                        hidden$="[[!dish.editing]]"
+                        class="input"
+                        type="text"
+                        placeholder="Preço"
+                        value="{{dish.name::input}}">
+                      <b
+                      hidden$="[[dish.editing]]">[[dish.name]]</b>
+                      <div>
+                        <button
+                          on-click="_SAVEeditItem"
+                          hidden$="[[!dish.editing]]"
+                          style="text-decoration: underline; background: none; color: var(--highlight-color)"
+                          class="button">
+                          salvar
+                        </button>
+                        <button
+                          on-click="_editItem"
+                          hidden$="[[!dish.editing]]"
+                          style="text-decoration: underline; background: none; color: var(--highlight-color)"
+                          class="button">
+                          cancelar
+                        </button> 
+                        <button
+                          on-click="_editItem"
+                          hidden$="[[dish.editing]]"
+                          style="text-decoration: underline; background: none; color: var(--highlight-color)"
+                          class="button">
+                          editar
+                        </button> 
+                        <button
+                          on-click="_EDITremoveItem"
+                          hidden$="[[dish.editing]]"
+                          style="text-decoration: underline; background: none; color: var(--highlight-color)"
+                          class="button">
+                          remover
+                        </button> 
+                      </div>
                     </div>
-                    <p>[[dish.description]]</p>
-                    <p>R$ [[dish.price]]</p>
+                    <input
+                      id="categoryInput"
+                      hidden$="[[!dish.editing]]"
+                      class="input"
+                      type="text"
+                      placeholder="Nome"
+                      value="{{dish.description::input}}">
+                    <input
+                      id="categoryInput"
+                      hidden$="[[!dish.editing]]"
+                      class="input"
+                      type="text"
+                      placeholder="Preço"
+                      value="{{dish.price::input}}">
+                    <p
+                    hidden$="[[dish.editing]]">[[dish.description]]</p>
+                    <p
+                    hidden$="[[dish.editing]]">R$ [[dish.price]]</p>
                   </div>
                 </template>
               </div>
@@ -352,6 +400,21 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       static get observers() {
         return ['_onPageChanged(page, user)'];
+      }
+
+      _SAVEeditItem(e){
+        this._fs.collection("restaurants").doc(this.user.email).collection("menu").doc(this._currentlyEditing.id).collection("category").doc(e.model.parentModel.category.id).collection("menuItem").doc(e.model.dish.id).update({
+            description: e.model.dish.description,
+            price: e.model.dish.price,
+            name: e.model.dish.name
+          })
+          .then( result => {
+            e.model.set('dish.editing', !e.model.dish.editing);
+          })
+      }
+
+      _editItem(e) {
+        e.model.set('dish.editing', !e.model.dish.editing);
       }
 
       _createNewCategory() {
@@ -479,6 +542,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               menu.categories = menusCategories[index];
               menu.editing = false;
               if (menu.status) this.set('_currentlyEnabledMenu', menu);
+
+              menu.categories.flatMap(value => value.items).forEach(value => {
+                value.editing = false;
+                return value;
+              })
             })
             this.set('menus', menus.filter(menu => { return menu.categories.length; }));
           })
