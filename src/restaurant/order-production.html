@@ -194,7 +194,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   this.set('filteredOrders', this.orders);
                   break
                 case 1:
-                  this.set('filteredOrders', this.orders.filter(order => !order.delivered && (!order.status || order.status === 'Preparando')));
+                  this.set('filteredOrders', this.orders.filter(order => !order.delivered && order.status && order.status === 'Preparando'));
                   break
                 case 2:
                   this.set('filteredOrders', this.orders.filter(order => !order.delivered && order.status && order.status === 'Pronto'));
@@ -238,9 +238,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
 
       _currentStatus(order, id) {
+        if(!order.status) return false;
         switch(id) {
-          case 1: return !order.delivered && (!order.status || order.status === 'Preparando');
-          case 2: return !order.delivered && order.status && order.status === 'Pronto';
+          case 1: return !order.delivered && order.status === 'Preparando';
+          case 2: return !order.delivered && order.status === 'Pronto';
           case 3: return order.delivered;
         }
       }
@@ -252,20 +253,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       _changeFilter(e) {
         this.set('filter', parseInt(e.currentTarget.dataset.id));
       }
-
-      _getLabelColor(order) {
-        return (order.delivered) ? 'delivered' :
-          (!order.status) ? 'preparation' :
-          order.status === 'Entregue' ? 'ready' :
-          '';
-      }
-
-      _getStatusLabel(order) {
-        return (order.delivered) ? 'Retirado' :
-          (!order.status) ? 'Preparando' :
-          order.status;
-      }
-
+    
       _onPageChanged(page) {
         if(page == 'order-production' && this.user) {
 
