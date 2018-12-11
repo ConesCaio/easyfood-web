@@ -55,13 +55,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         border-radius: 10px;
       }
       .preparation-btn {
-        background: goldenrod;
+        background: tomato;
       }
       .ready-btn {
-        background: forestgreen;
+        background: goldenrod;
       }
       .delivered-btn {
-        background: tomato;
+        background: forestgreen;
       }
       .preparation-btn:not([selected]) {
         background: grey;
@@ -76,13 +76,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         background: grey;
       }
       .preparation {
-        color: goldenrod;
+        color: tomato;
       }
       .ready {
-        color: forestgreen;
+        color: goldenrod;
       }
       .delivered {
-        color: tomato;
+        color: forestgreen;
       }
 
     </style>
@@ -108,14 +108,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         data-id="2"
         class="button order-stats ready-btn"
         selected$="[[_isSelected(filter, 2)]]">
-        <span>Retirar no Caixa</span>
+        <span>Pronto</span>
       </button>
       <button
         on-click="_changeFilter"
         data-id="3"
         class="button order-stats delivered-btn"
         selected$="[[_isSelected(filter, 3)]]">
-        <span>Retirado</span>
+        <span>Entregue</span>
       </button>
     </div> 
 
@@ -138,14 +138,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               data-id="2"
               class="button order-stats-mini ready-btn"
               selected$="[[_currentStatus(order, 2)]]">
-              <span>Retirar no Caixa</span>
+              <span>Pronto</span>
             </button>
             <button
               on-click="_changeStatus"
               data-id="3"
               class="button order-stats-mini delivered-btn"
               selected$="[[_currentStatus(order, 3)]]">
-              <span>Retirado</span>
+              <span>Entregue</span>
             </button>
           </p>
         </div>
@@ -197,7 +197,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   this.set('filteredOrders', this.orders.filter(order => !order.delivered && (!order.status || order.status === 'Preparando')));
                   break
                 case 2:
-                  this.set('filteredOrders', this.orders.filter(order => !order.delivered && order.status && order.status === 'Retirar no Caixa'));
+                  this.set('filteredOrders', this.orders.filter(order => !order.delivered && order.status && order.status === 'Pronto'));
                   break
                 case 3:
                   this.set('filteredOrders', this.orders.filter(order => order.delivered));
@@ -214,8 +214,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       _changeStatus(e) {
         const updatedStatus = e.currentTarget.dataset.id === '1' ? {delivered: false, status: 'Preparando'} :
-          e.currentTarget.dataset.id === '2' ? {delivered: false, status: 'Retirar no Caixa'} :
-          e.currentTarget.dataset.id === '3' ? {delivered: true, status: 'Retirado'} :
+          e.currentTarget.dataset.id === '2' ? {delivered: false, status: 'Pronto'} :
+          e.currentTarget.dataset.id === '3' ? {delivered: true, status: 'Entregue'} :
           {};
 
         this._fs.collection("order").doc(e.model.order.id).update(updatedStatus)
@@ -240,7 +240,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       _currentStatus(order, id) {
         switch(id) {
           case 1: return !order.delivered && (!order.status || order.status === 'Preparando');
-          case 2: return !order.delivered && order.status && order.status === 'Retirar no Caixa';
+          case 2: return !order.delivered && order.status && order.status === 'Pronto';
           case 3: return order.delivered;
         }
       }
@@ -256,7 +256,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       _getLabelColor(order) {
         return (order.delivered) ? 'delivered' :
           (!order.status) ? 'preparation' :
-          order.status === 'Retirado' ? 'ready' :
+          order.status === 'Entregue' ? 'ready' :
           '';
       }
 
